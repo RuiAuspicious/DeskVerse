@@ -14,5 +14,6 @@
     <Description>A quiet desktop verse widget for Windows.</Description>
     <RepositoryUrl>https://github.com/RuiAuspicious/DeskVerse</RepositoryUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <ApplicationIcon>assets\deskverse.ico</ApplicationIcon>
   </PropertyGroup>
 </Project>

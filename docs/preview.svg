@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-label="DeskVerse preview">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#18202b"/>
+      <stop offset="0.42" stop-color="#2d3540"/>
+      <stop offset="0.7" stop-color="#d1a668"/>
+      <stop offset="1" stop-color="#2b3440"/>
+    </linearGradient>
+    <radialGradient id="light" cx="26%" cy="45%" r="50%">
+      <stop offset="0" stop-color="#f2d29a" stop-opacity=".88"/>
+      <stop offset=".36" stop-color="#e7b166" stop-opacity=".42"/>
+      <stop offset="1" stop-color="#101822" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="softShadow" x="-20%" y="-60%" width="140%" height="220%">
+      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#0c1117" flood-opacity=".32"/>
+    </filter>
+  </defs>
+  <rect width="1280" height="720" fill="url(#sky)"/>
+  <rect width="1280" height="720" fill="url(#light)"/>
+  <path d="M0 516c142-48 256-72 401-44 95 18 175 60 272 48 91-12 172-74 267-86 106-14 214 28 340 79v207H0z" fill="#18212b" opacity=".78"/>
+  <path d="M0 600c154-42 302-45 446-20 119 20 218 63 345 39 142-27 273-75 489-4v105H0z" fill="#0f1720" opacity=".72"/>
+  <g filter="url(#softShadow)">
+    <rect x="286" y="50" width="708" height="126" rx="18" fill="#f1f3ee" opacity=".18"/>
+    <rect x="287" y="51" width="706" height="124" rx="17" fill="#30353b" opacity=".74"/>
+    <path d="M304 53h672" stroke="#ffffff" stroke-opacity=".16" stroke-width="1"/>
+    <text x="640" y="103" text-anchor="middle" font-family="Microsoft YaHei UI, Segoe UI, sans-serif" font-size="30" fill="#f4f6f2">
+      奋斗的目标就是为了躺平，就是为了过上不被闹钟叫醒的日子。
+    </text>
+    <text x="640" y="142" text-anchor="middle" font-family="Microsoft YaHei UI, Segoe UI, sans-serif" font-size="16" fill="#c9d1cf">《余华》</text>
+  </g>
+</svg>

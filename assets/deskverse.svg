@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="DeskVerse icon">
+  <defs>
+    <linearGradient id="bg" x1="48" y1="24" x2="208" y2="232" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f3efe3"/>
+      <stop offset="0.52" stop-color="#dbe7e4"/>
+      <stop offset="1" stop-color="#9fb4bc"/>
+    </linearGradient>
+    <linearGradient id="ink" x1="74" y1="74" x2="184" y2="178" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1f2630"/>
+      <stop offset="1" stop-color="#41505a"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="56" fill="#20252f"/>
+  <rect x="31" y="29" width="194" height="198" rx="42" fill="url(#bg)"/>
+  <path d="M64 83c25-20 52-29 82-26 15 2 27 7 37 15-27 0-48 7-65 20-17 12-30 30-40 53-7-17-12-38-14-62z" fill="url(#ink)"/>
+  <path d="M86 167c21-12 47-18 78-18 15 0 29 2 42 5-17 24-44 39-76 39-18 0-33-4-44-13-5-4-5-9 0-13z" fill="#2c3740"/>
+  <path d="M71 116h105" stroke="#f8f6ef" stroke-width="11" stroke-linecap="round" opacity=".88"/>
+  <path d="M84 142h72" stroke="#f8f6ef" stroke-width="11" stroke-linecap="round" opacity=".82"/>
+  <path d="M102 168h39" stroke="#f8f6ef" stroke-width="10" stroke-linecap="round" opacity=".78"/>
+</svg>
