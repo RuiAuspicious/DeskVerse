@@ -7,7 +7,8 @@ var tests = new (string Name, Action Run)[]
     ("Startup path parser handles unquoted command", StartupPathParserHandlesUnquotedCommand),
     ("Wallpaper theme keeps text distinct from background", WallpaperThemeKeepsTextDistinctFromBackground),
     ("Animation easing stays in expected bounds", AnimationEasingStaysInExpectedBounds),
-    ("Countdown remaining days clamps past targets", CountdownRemainingDaysClampsPastTargets)
+    ("Countdown remaining days clamps past targets", CountdownRemainingDaysClampsPastTargets),
+    ("Digital countdown control supports construction", DigitalCountdownControlSupportsConstruction)
 };
 
 var failures = new List<string>();
@@ -81,6 +82,13 @@ static void CountdownRemainingDaysClampsPastTargets()
     AssertEqual(10, CountdownCalculator.RemainingDays(today, new DateTime(2026, 6, 19)));
     AssertEqual(0, CountdownCalculator.RemainingDays(today, new DateTime(2026, 6, 9)));
     AssertEqual(0, CountdownCalculator.RemainingDays(today, new DateTime(2026, 6, 1)));
+}
+
+static void DigitalCountdownControlSupportsConstruction()
+{
+    using var control = new DigitalCountdownControl();
+
+    AssertEqual(Color.Transparent, control.BackColor);
 }
 
 static double Contrast(Color first, Color second)

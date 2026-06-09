@@ -23,6 +23,7 @@ internal sealed class DigitalCountdownControl : Control
     public DigitalCountdownControl()
     {
         DoubleBuffered = true;
+        SetStyle(ControlStyles.SupportsTransparentBackColor, true);
         BackColor = Color.Transparent;
         SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
     }
