@@ -5,7 +5,8 @@ var tests = new (string Name, Action Run)[]
     ("Startup run command quotes executable path", StartupRunCommandQuotesExecutablePath),
     ("Startup path parser handles quoted command", StartupPathParserHandlesQuotedCommand),
     ("Startup path parser handles unquoted command", StartupPathParserHandlesUnquotedCommand),
-    ("Wallpaper theme keeps text distinct from background", WallpaperThemeKeepsTextDistinctFromBackground)
+    ("Wallpaper theme keeps text distinct from background", WallpaperThemeKeepsTextDistinctFromBackground),
+    ("Animation easing stays in expected bounds", AnimationEasingStaysInExpectedBounds)
 };
 
 var failures = new List<string>();
@@ -61,6 +62,15 @@ static void WallpaperThemeKeepsTextDistinctFromBackground()
 
     AssertTrue(Contrast(darkTheme.Background, darkTheme.Text) > 3.0, "dark theme contrast is too low");
     AssertTrue(Contrast(lightTheme.Background, lightTheme.Text) > 3.0, "light theme contrast is too low");
+}
+
+static void AnimationEasingStaysInExpectedBounds()
+{
+    AssertEqual(0.0, HitokotoWidgetForm.EaseOutCubic(-1));
+    AssertEqual(0.0, HitokotoWidgetForm.EaseOutCubic(0));
+    AssertEqual(1.0, HitokotoWidgetForm.EaseOutCubic(1));
+    AssertEqual(1.0, HitokotoWidgetForm.EaseOutCubic(2));
+    AssertTrue(HitokotoWidgetForm.EaseOutCubic(0.5) is > 0.5 and < 1.0, "midpoint should ease forward");
 }
 
 static double Contrast(Color first, Color second)

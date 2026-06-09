@@ -8,6 +8,10 @@ internal sealed class HitokotoWidgetForm : Form
     private const int WidgetMaxHeight = 142;
     private const int TopOffset = 18;
     private const int CornerRadius = 18;
+    private const int AnimationFrameMs = 16;
+    private const int StartupAnimationMs = 220;
+    private const int RefreshFadeMs = 150;
+    private const int FeedbackMs = 900;
 
     private readonly Label sentenceLabel;
     private readonly Label metaLabel;
@@ -23,7 +27,11 @@ internal sealed class HitokotoWidgetForm : Form
     private SentenceSource selectedSource;
     private HitokotoSentence? lastSentence;
     private Color borderColor = Color.FromArgb(130, 255, 255, 255);
+    private Color baseBorderColor = Color.FromArgb(130, 255, 255, 255);
+    private double themeOpacity = 0.86;
     private bool isRefreshing;
+    private int feedbackVersion;
+    private CancellationTokenSource? windowAnimationCancellation;
 
     public HitokotoWidgetForm()
     {
@@ -34,7 +42,7 @@ internal sealed class HitokotoWidgetForm : Form
         StartPosition = FormStartPosition.Manual;
         BackColor = Color.FromArgb(246, 242, 232);
         ForeColor = Color.FromArgb(32, 37, 47);
-        Opacity = 0.88;
+        Opacity = 0;
         Width = WidgetMaxWidth;
         Height = WidgetMinHeight;
         MinimumSize = new Size(WidgetMinWidth, WidgetMinHeight);
@@ -110,6 +118,7 @@ internal sealed class HitokotoWidgetForm : Form
             PositionAtDesktopTop();
             ApplyRefreshTimerSetting();
             themeTimer.Start();
+            await PlayStartupAnimationAsync();
             await RefreshSentenceAsync();
         };
         Resize += (_, _) => UpdateRoundedRegion();
@@ -181,6 +190,8 @@ internal sealed class HitokotoWidgetForm : Form
             refreshTimer.Dispose();
             themeTimer.Dispose();
             trayIcon.Dispose();
+            windowAnimationCancellation?.Cancel();
+            windowAnimationCancellation?.Dispose();
             SystemEvents.DisplaySettingsChanged -= HandleDisplaySettingsChanged;
             SystemEvents.UserPreferenceChanged -= HandleUserPreferenceChanged;
         }
@@ -457,6 +468,7 @@ internal sealed class HitokotoWidgetForm : Form
         }
 
         Clipboard.SetText(FormatShareText(lastSentence));
+        ShowFeedback("已复制");
     }
 
     private void SaveCurrentFavorite()
@@ -467,6 +479,7 @@ internal sealed class HitokotoWidgetForm : Form
         }
 
         FavoritesStore.Add(lastSentence);
+        ShowFeedback("已收藏");
     }
 
     private async Task RefreshSentenceAsync()
@@ -480,10 +493,13 @@ internal sealed class HitokotoWidgetForm : Form
             var sentence = selectedSource == SentenceSource.Jinrishici
                 ? await JinrishiciClient.GetSentenceAsync()
                 : await HitokotoClient.GetSentenceAsync();
+            await AnimateOpacityAsync(Math.Max(0.35, themeOpacity - 0.22), RefreshFadeMs);
+            feedbackVersion++;
             lastSentence = sentence;
             sentenceLabel.Text = sentence.Text;
             metaLabel.Text = FormatMeta(sentence);
             ResizeToFitSentence();
+            await AnimateOpacityAsync(themeOpacity, RefreshFadeMs);
         }
         catch (Exception exception)
         {
@@ -491,7 +507,9 @@ internal sealed class HitokotoWidgetForm : Form
             metaLabel.Text = lastSentence is null
                 ? "网络暂时不可用"
                 : $"{FormatMeta(lastSentence)} · 网络暂时不可用";
+            feedbackVersion++;
             ResizeToFitSentence();
+            await AnimateOpacityAsync(themeOpacity, RefreshFadeMs);
         }
         finally
         {
@@ -563,8 +581,13 @@ internal sealed class HitokotoWidgetForm : Form
         ForeColor = theme.Text;
         sentenceLabel.ForeColor = theme.Text;
         metaLabel.ForeColor = theme.SecondaryText;
-        borderColor = theme.Border;
-        Opacity = theme.Opacity;
+        baseBorderColor = theme.Border;
+        borderColor = baseBorderColor;
+        themeOpacity = theme.Opacity;
+        if (!isRefreshing && Visible)
+        {
+            Opacity = themeOpacity;
+        }
         Invalidate();
     }
 
@@ -572,6 +595,104 @@ internal sealed class HitokotoWidgetForm : Form
     {
         ResizeToFitSentence();
         TopMost = false;
+    }
+
+    private async Task PlayStartupAnimationAsync()
+    {
+        var targetTop = Top;
+        Top = targetTop - 8;
+        Opacity = 0;
+
+        await AnimateWindowAsync(
+            StartupAnimationMs,
+            progress =>
+            {
+                var eased = EaseOutCubic(progress);
+                Top = targetTop - (int)Math.Round((1 - eased) * 8);
+                Opacity = themeOpacity * eased;
+            });
+
+        Top = targetTop;
+        Opacity = themeOpacity;
+    }
+
+    private Task AnimateOpacityAsync(double targetOpacity, int durationMs)
+    {
+        var startOpacity = Opacity;
+        return AnimateWindowAsync(
+            durationMs,
+            progress =>
+            {
+                var eased = EaseOutCubic(progress);
+                Opacity = startOpacity + (targetOpacity - startOpacity) * eased;
+            });
+    }
+
+    private Task AnimateWindowAsync(int durationMs, Action<double> applyFrame)
+    {
+        windowAnimationCancellation?.Cancel();
+        windowAnimationCancellation?.Dispose();
+        windowAnimationCancellation = new CancellationTokenSource();
+        var cancellationToken = windowAnimationCancellation.Token;
+        var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var elapsed = 0;
+        var timer = new System.Windows.Forms.Timer
+        {
+            Interval = AnimationFrameMs
+        };
+
+        timer.Tick += (_, _) =>
+        {
+            if (cancellationToken.IsCancellationRequested || IsDisposed)
+            {
+                timer.Stop();
+                timer.Dispose();
+                completion.TrySetCanceled(cancellationToken);
+                return;
+            }
+
+            elapsed += timer.Interval;
+            var progress = Math.Clamp(elapsed / (double)durationMs, 0, 1);
+            applyFrame(progress);
+
+            if (progress >= 1)
+            {
+                timer.Stop();
+                timer.Dispose();
+                completion.TrySetResult();
+            }
+        };
+
+        applyFrame(0);
+        timer.Start();
+        return completion.Task;
+    }
+
+    private async void ShowFeedback(string text)
+    {
+        var version = ++feedbackVersion;
+        var previousMeta = metaLabel.Text;
+        var highlight = ControlPaint.Light(baseBorderColor, 0.65F);
+
+        metaLabel.Text = text;
+        borderColor = Color.FromArgb(170, highlight);
+        Invalidate();
+
+        await Task.Delay(FeedbackMs);
+        if (version != feedbackVersion || IsDisposed)
+        {
+            return;
+        }
+
+        metaLabel.Text = previousMeta;
+        borderColor = baseBorderColor;
+        Invalidate();
+    }
+
+    internal static double EaseOutCubic(double progress)
+    {
+        var normalized = Math.Clamp(progress, 0, 1);
+        return 1 - Math.Pow(1 - normalized, 3);
     }
 
     private void ResizeToFitSentence()

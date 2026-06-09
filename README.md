@@ -16,6 +16,7 @@ It stays on your desktop, shows a short sentence or poem, adapts its colors from
 
 - Native Windows WinForms app, no Electron or WebView.
 - Low power usage: no continuous animation, no high-frequency polling.
+- Subtle event animations for startup, refresh, copy, and favorite feedback.
 - Single instance: launching it repeatedly will not open duplicate widgets.
 - Switchable text sources:
   - [Hitokoto](https://developer.hitokoto.cn/sentence/)

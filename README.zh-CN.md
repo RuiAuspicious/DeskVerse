@@ -18,6 +18,7 @@
 
 - 原生 Windows WinForms 应用，不使用 Electron 或 WebView。
 - 低功耗：无持续动画，无高频轮询。
+- 轻量事件动画：启动、刷新、复制和收藏时有短暂反馈。
 - 单实例运行：重复启动不会打开多个小组件。
 - 可切换文本来源：
   - [一言](https://developer.hitokoto.cn/sentence/)
