@@ -57,6 +57,12 @@ dotnet run
 dotnet build -c Release
 ```
 
+## 测试
+
+```powershell
+dotnet run --project tests/DeskVerse.Tests/DeskVerse.Tests.csproj -c Release
+```
+
 ## 发布
 
 依赖 .NET Runtime 的单文件版本：
@@ -92,9 +98,12 @@ DeskVerse 会把设置和收藏保存在当前用户目录下：
 ```text
 %AppData%\DeskVerse\settings.json
 %AppData%\DeskVerse\favorites.json
+%AppData%\DeskVerse\logs\
 ```
 
 今日诗词需要客户端 token。DeskVerse 会把 token 保存在 `settings.json` 中，避免每次启动都重新请求 token。
+
+日志只保存在本机，用于排查启动、壁纸取色和网络请求失败。
 
 ## 隐私
 

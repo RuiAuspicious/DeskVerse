@@ -55,6 +55,12 @@ dotnet run
 dotnet build -c Release
 ```
 
+## Test
+
+```powershell
+dotnet run --project tests/DeskVerse.Tests/DeskVerse.Tests.csproj -c Release
+```
+
 ## Publish
 
 Framework-dependent single-file build:
@@ -90,9 +96,12 @@ DeskVerse stores local settings and favorites under:
 ```text
 %AppData%\DeskVerse\settings.json
 %AppData%\DeskVerse\favorites.json
+%AppData%\DeskVerse\logs\
 ```
 
 Jinrishici requires a client token. DeskVerse stores that token in `settings.json` so it does not request a new token on every launch.
+
+Logs are local only and are used to diagnose startup, wallpaper, and network failures.
 
 ## Privacy
 

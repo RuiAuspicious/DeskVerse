@@ -22,8 +22,14 @@ jobs:
         with:
           dotnet-version: 9.0.x
 
-      - name: Restore
-        run: dotnet restore DeskVerse.sln
+      - name: Restore app
+        run: dotnet restore DeskVerse.csproj
+
+      - name: Restore tests
+        run: dotnet restore tests/DeskVerse.Tests/DeskVerse.Tests.csproj
 
       - name: Build
         run: dotnet build DeskVerse.sln --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet run --project tests/DeskVerse.Tests/DeskVerse.Tests.csproj --configuration Release --no-build
