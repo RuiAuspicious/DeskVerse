@@ -25,14 +25,23 @@ jobs:
         with:
           dotnet-version: 9.0.x
 
-      - name: Restore
-        run: dotnet restore DeskVerse.sln
+      - name: Restore app
+        run: dotnet restore DeskVerse.csproj
+
+      - name: Restore tests
+        run: dotnet restore tests/DeskVerse.Tests/DeskVerse.Tests.csproj
+
+      - name: Build
+        run: dotnet build DeskVerse.sln --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet run --project tests/DeskVerse.Tests/DeskVerse.Tests.csproj --configuration Release --no-build
 
       - name: Publish framework-dependent
-        run: dotnet publish DeskVerse.csproj -c Release -r win-x64 --self-contained false /p:PublishSingleFile=true -o artifacts/framework-dependent
+        run: dotnet publish DeskVerse.csproj -c Release -r win-x64 --self-contained false --no-restore /p:PublishSingleFile=true -o artifacts/framework-dependent
 
       - name: Publish self-contained
-        run: dotnet publish DeskVerse.csproj -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true -o artifacts/self-contained
+        run: dotnet publish DeskVerse.csproj -c Release -r win-x64 --self-contained true --no-restore /p:PublishSingleFile=true -o artifacts/self-contained
 
       - name: Package artifacts
         shell: pwsh
@@ -50,8 +59,36 @@ jobs:
 
       - name: Create GitHub release
         if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            DeskVerse-win-x64-framework-dependent.zip
-            DeskVerse-win-x64-self-contained.zip
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $notes = @"
+          ## 下载哪个包？
+
+          - ``DeskVerse-win-x64-self-contained.zip``
+            - 推荐给大多数用户。
+            - 体积较大，但不需要额外安装 .NET。
+
+          - ``DeskVerse-win-x64-framework-dependent.zip``
+            - 体积更小。
+            - 需要电脑上已安装 .NET 9 Desktop Runtime。
+
+          ## 使用方式
+
+          1. 下载并解压 zip 文件。
+          2. 运行 ``DeskVerse.exe``。
+          3. 右键桌面小组件或托盘图标打开菜单。
+
+          ## English
+
+          Choose ``self-contained`` if you want the easiest install. Choose ``framework-dependent`` if you already have the .NET 9 Desktop Runtime installed and prefer a smaller download.
+
+          "@
+
+          gh release create $env:GITHUB_REF_NAME `
+            DeskVerse-win-x64-framework-dependent.zip `
+            DeskVerse-win-x64-self-contained.zip `
+            --verify-tag `
+            --generate-notes `
+            --notes "$notes"
