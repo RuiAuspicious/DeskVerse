@@ -8,7 +8,9 @@ It stays on your desktop, shows a short sentence or poem, adapts its colors from
 
 DeskVerse 是一个低功耗 Windows 桌面诗句小组件。它可以显示一言或今日诗词，根据壁纸自动取色，支持收藏、复制、开机自启动和简单的显示设置。
 
-![DeskVerse preview](docs/preview.svg)
+<p align="center">
+  <img src="docs/preview.svg" alt="DeskVerse preview" width="820">
+</p>
 
 ## Features
 
