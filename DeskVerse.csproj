@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>DeskVerse</AssemblyName>
+    <RootNamespace>DeskVerse</RootNamespace>
+    <Version>0.1.0</Version>
+    <Authors>xiaoc</Authors>
+    <Company>DeskVerse</Company>
+    <Product>DeskVerse</Product>
+    <Description>A quiet desktop verse widget for Windows.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+  </PropertyGroup>
+</Project>
