@@ -15,9 +15,12 @@ internal sealed class HitokotoWidgetForm : Form
 
     private readonly Label sentenceLabel;
     private readonly Label metaLabel;
+    private readonly Control quoteView;
+    private readonly DigitalCountdownControl countdownControl;
     private readonly NotifyIcon trayIcon;
     private readonly System.Windows.Forms.Timer refreshTimer;
     private readonly System.Windows.Forms.Timer themeTimer;
+    private readonly System.Windows.Forms.Timer displayTimer;
     private readonly List<ToolStripMenuItem> sourceMenuItems = [];
     private readonly List<ToolStripMenuItem> refreshMenuItems = [];
     private readonly List<ToolStripMenuItem> positionMenuItems = [];
@@ -92,12 +95,23 @@ internal sealed class HitokotoWidgetForm : Form
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 21F));
         layout.Controls.Add(sentenceLabel, 0, 0);
         layout.Controls.Add(metaLabel, 0, 1);
-        Controls.Add(layout);
+        quoteView = layout;
+
+        countdownControl = new DigitalCountdownControl
+        {
+            Dock = DockStyle.Fill,
+            Visible = false
+        };
+        ApplyCountdownSettings();
+
+        Controls.Add(countdownControl);
+        Controls.Add(quoteView);
 
         var contextMenu = BuildContextMenu();
         ContextMenuStrip = contextMenu;
         sentenceLabel.ContextMenuStrip = contextMenu;
         metaLabel.ContextMenuStrip = contextMenu;
+        countdownControl.ContextMenuStrip = contextMenu;
         DoubleClick += async (_, _) => await RefreshSentenceAsync();
 
         trayIcon = CreateTrayIcon();
@@ -111,12 +125,18 @@ internal sealed class HitokotoWidgetForm : Form
             Interval = (int)TimeSpan.FromMinutes(10).TotalMilliseconds
         };
         themeTimer.Tick += (_, _) => ApplyWallpaperTheme();
+        displayTimer = new System.Windows.Forms.Timer
+        {
+            Interval = 5000
+        };
+        displayTimer.Tick += async (_, _) => await ToggleDisplayModeAsync();
 
         Load += async (_, _) =>
         {
             ApplyWallpaperTheme();
             PositionAtDesktopTop();
             ApplyRefreshTimerSetting();
+            ApplyDisplayTimerSetting();
             themeTimer.Start();
             await PlayStartupAnimationAsync();
             await RefreshSentenceAsync();
@@ -189,6 +209,7 @@ internal sealed class HitokotoWidgetForm : Form
         {
             refreshTimer.Dispose();
             themeTimer.Dispose();
+            displayTimer.Dispose();
             trayIcon.Dispose();
             windowAnimationCancellation?.Cancel();
             windowAnimationCancellation?.Dispose();
@@ -224,6 +245,7 @@ internal sealed class HitokotoWidgetForm : Form
         menu.Items.Add(BuildSourceMenuItem(SentenceSource.Jinrishici));
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(BuildSettingsMenu());
+        menu.Items.Add("电子屏倒计时...", null, (_, _) => ConfigureCountdown());
         menu.Items.Add("打开来源", null, (_, _) => OpenSourceLink());
         menu.Items.Add("重新匹配壁纸颜色", null, (_, _) => ApplyWallpaperTheme());
         menu.Items.Add(BuildStartupMenuItem());
@@ -416,6 +438,19 @@ internal sealed class HitokotoWidgetForm : Form
         refreshTimer.Start();
     }
 
+    private void ApplyDisplayTimerSetting()
+    {
+        displayTimer.Stop();
+        if (settings.CountdownEnabled)
+        {
+            displayTimer.Start();
+        }
+        else
+        {
+            ShowQuoteView();
+        }
+    }
+
     private void UpdateSourceMenuChecks()
     {
         foreach (var item in sourceMenuItems)
@@ -487,19 +522,28 @@ internal sealed class HitokotoWidgetForm : Form
         if (isRefreshing) return;
 
         isRefreshing = true;
+        var animateQuote = quoteView.Visible;
 
         try
         {
             var sentence = selectedSource == SentenceSource.Jinrishici
                 ? await JinrishiciClient.GetSentenceAsync()
                 : await HitokotoClient.GetSentenceAsync();
-            await AnimateOpacityAsync(Math.Max(0.35, themeOpacity - 0.22), RefreshFadeMs);
+            if (animateQuote)
+            {
+                await AnimateOpacityAsync(Math.Max(0.35, themeOpacity - 0.22), RefreshFadeMs);
+            }
+
             feedbackVersion++;
             lastSentence = sentence;
             sentenceLabel.Text = sentence.Text;
             metaLabel.Text = FormatMeta(sentence);
             ResizeToFitSentence();
-            await AnimateOpacityAsync(themeOpacity, RefreshFadeMs);
+
+            if (animateQuote)
+            {
+                await AnimateOpacityAsync(themeOpacity, RefreshFadeMs);
+            }
         }
         catch (Exception exception)
         {
@@ -509,7 +553,10 @@ internal sealed class HitokotoWidgetForm : Form
                 : $"{FormatMeta(lastSentence)} · 网络暂时不可用";
             feedbackVersion++;
             ResizeToFitSentence();
-            await AnimateOpacityAsync(themeOpacity, RefreshFadeMs);
+            if (animateQuote)
+            {
+                await AnimateOpacityAsync(themeOpacity, RefreshFadeMs);
+            }
         }
         finally
         {
@@ -581,6 +628,7 @@ internal sealed class HitokotoWidgetForm : Form
         ForeColor = theme.Text;
         sentenceLabel.ForeColor = theme.Text;
         metaLabel.ForeColor = theme.SecondaryText;
+        countdownControl.ApplyTheme(theme);
         baseBorderColor = theme.Border;
         borderColor = baseBorderColor;
         themeOpacity = theme.Opacity;
@@ -595,6 +643,67 @@ internal sealed class HitokotoWidgetForm : Form
     {
         ResizeToFitSentence();
         TopMost = false;
+    }
+
+    private async Task ToggleDisplayModeAsync()
+    {
+        if (!settings.CountdownEnabled)
+        {
+            ShowQuoteView();
+            return;
+        }
+
+        await AnimateOpacityAsync(Math.Max(0.35, themeOpacity - 0.18), RefreshFadeMs);
+        if (countdownControl.Visible)
+        {
+            ShowQuoteView();
+        }
+        else
+        {
+            ShowCountdownView();
+        }
+
+        await AnimateOpacityAsync(themeOpacity, RefreshFadeMs);
+    }
+
+    private void ShowQuoteView()
+    {
+        countdownControl.Visible = false;
+        quoteView.Visible = true;
+        quoteView.BringToFront();
+        ResizeToFitSentence();
+    }
+
+    private void ShowCountdownView()
+    {
+        ApplyCountdownSettings();
+        quoteView.Visible = false;
+        countdownControl.Visible = true;
+        countdownControl.BringToFront();
+        ResizeToFitSentence();
+    }
+
+    private void ConfigureCountdown()
+    {
+        using var dialog = new CountdownSettingsForm(settings);
+        if (dialog.ShowDialog(this) != DialogResult.OK)
+        {
+            return;
+        }
+
+        settings = dialog.BuildSettings(settings).Normalize();
+        AppSettings.Save(settings);
+        ApplyCountdownSettings();
+        ApplyDisplayTimerSetting();
+        ResizeToFitSentence();
+    }
+
+    private void ApplyCountdownSettings()
+    {
+        countdownControl.TargetTitle = settings.CountdownTitle;
+        countdownControl.TargetDate = settings.EffectiveCountdownTargetDate();
+        countdownControl.Subtitle = settings.CountdownSubtitle;
+        countdownControl.Invalidate();
     }
 
     private async Task PlayStartupAnimationAsync()
@@ -699,6 +808,15 @@ internal sealed class HitokotoWidgetForm : Form
     {
         var workArea = Screen.PrimaryScreen?.WorkingArea ?? Screen.AllScreens[0].WorkingArea;
         var maxWidth = Math.Min(WidgetMaxWidth, Math.Max(WidgetMinWidth, workArea.Width - 96));
+        if (countdownControl.Visible)
+        {
+            Width = Math.Clamp(520, WidgetMinWidth, maxWidth);
+            Height = WidgetMaxHeight;
+            PositionWithinWorkArea(workArea);
+            UpdateRoundedRegion();
+            return;
+        }
+
         var sentenceWidth = TextRenderer.MeasureText(
             sentenceLabel.Text,
             sentenceLabel.Font,
@@ -720,6 +838,12 @@ internal sealed class HitokotoWidgetForm : Form
             TextFormatFlags.WordBreak | TextFormatFlags.TextBoxControl);
         var desiredHeight = measured.Height + 50;
         Height = Math.Clamp(desiredHeight, WidgetMinHeight, WidgetMaxHeight);
+        PositionWithinWorkArea(workArea);
+        UpdateRoundedRegion();
+    }
+
+    private void PositionWithinWorkArea(Rectangle workArea)
+    {
         (Left, Top) = settings.Position switch
         {
             WidgetPosition.TopLeft => (workArea.Left + TopOffset, workArea.Top + TopOffset),
@@ -727,7 +851,6 @@ internal sealed class HitokotoWidgetForm : Form
             WidgetPosition.BottomCenter => (workArea.Left + (workArea.Width - Width) / 2, workArea.Bottom - Height - TopOffset),
             _ => (workArea.Left + (workArea.Width - Width) / 2, workArea.Top + TopOffset)
         };
-        UpdateRoundedRegion();
     }
 
     private void UpdateRoundedRegion()

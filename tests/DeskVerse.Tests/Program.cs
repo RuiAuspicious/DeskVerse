@@ -6,7 +6,8 @@ var tests = new (string Name, Action Run)[]
     ("Startup path parser handles quoted command", StartupPathParserHandlesQuotedCommand),
     ("Startup path parser handles unquoted command", StartupPathParserHandlesUnquotedCommand),
     ("Wallpaper theme keeps text distinct from background", WallpaperThemeKeepsTextDistinctFromBackground),
-    ("Animation easing stays in expected bounds", AnimationEasingStaysInExpectedBounds)
+    ("Animation easing stays in expected bounds", AnimationEasingStaysInExpectedBounds),
+    ("Countdown remaining days clamps past targets", CountdownRemainingDaysClampsPastTargets)
 };
 
 var failures = new List<string>();
@@ -71,6 +72,15 @@ static void AnimationEasingStaysInExpectedBounds()
     AssertEqual(1.0, HitokotoWidgetForm.EaseOutCubic(1));
     AssertEqual(1.0, HitokotoWidgetForm.EaseOutCubic(2));
     AssertTrue(HitokotoWidgetForm.EaseOutCubic(0.5) is > 0.5 and < 1.0, "midpoint should ease forward");
+}
+
+static void CountdownRemainingDaysClampsPastTargets()
+{
+    var today = new DateTime(2026, 6, 9);
+
+    AssertEqual(10, CountdownCalculator.RemainingDays(today, new DateTime(2026, 6, 19)));
+    AssertEqual(0, CountdownCalculator.RemainingDays(today, new DateTime(2026, 6, 9)));
+    AssertEqual(0, CountdownCalculator.RemainingDays(today, new DateTime(2026, 6, 1)));
 }
 
 static double Contrast(Color first, Color second)

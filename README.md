@@ -22,6 +22,7 @@ It stays on your desktop, shows a short sentence or poem, adapts its colors from
   - [Hitokoto](https://developer.hitokoto.cn/sentence/)
   - [Jinrishici](https://www.jinrishici.com/doc/)
 - Wallpaper-aware theme colors for background, text, metadata, and border.
+- Optional digital countdown screen that alternates with the sentence view every 5 seconds.
 - Auto refresh interval: 15 minutes, 30 minutes, 1 hour, daily, or locked.
 - Position presets: top center, top left, top right, bottom center.
 - Font size presets: small, medium, large.
