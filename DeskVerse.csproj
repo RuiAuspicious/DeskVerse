@@ -12,6 +12,7 @@
     <Company>DeskVerse</Company>
     <Product>DeskVerse</Product>
     <Description>A quiet desktop verse widget for Windows.</Description>
+    <RepositoryUrl>https://github.com/RuiAuspicious/DeskVerse</RepositoryUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 </Project>
