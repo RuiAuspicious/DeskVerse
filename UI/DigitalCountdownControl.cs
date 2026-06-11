@@ -2,6 +2,15 @@ namespace DeskVerse;
 
 internal sealed class DigitalCountdownControl : Control
 {
+    internal readonly record struct CountdownDigitLayout(
+        float DigitWidth,
+        float DigitHeight,
+        float StartX,
+        float StartY,
+        RectangleF DigitBounds,
+        Rectangle TitleRectangle,
+        Rectangle SubtitleRectangle);
+
     private static readonly bool[][] DigitSegments =
     [
         [true, true, true, true, true, true, false],
@@ -49,56 +58,83 @@ internal sealed class DigitalCountdownControl : Control
     {
         base.OnPaint(e);
         e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+        e.Graphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
         e.Graphics.Clear(BackColor);
 
         var days = CountdownCalculator.RemainingDays(DateTime.Today, TargetDate);
         var digitText = Math.Min(days, 99999).ToString();
         var title = $"距离 {TargetTitle} 还有";
+        var layout = CalculateLayout(ClientSize, digitText.Length);
 
-        using var titleFont = new Font("Microsoft YaHei UI", 8.2F, FontStyle.Regular);
-        using var subtitleFont = new Font("Microsoft YaHei UI", 7.6F, FontStyle.Regular);
-        var titleRectangle = new Rectangle(0, 8, Width, 18);
+        using var titleFont = new Font("Microsoft YaHei UI", 8.4F, FontStyle.Regular);
+        using var subtitleFont = new Font("Microsoft YaHei UI", 7.8F, FontStyle.Regular);
         TextRenderer.DrawText(
             e.Graphics,
             title,
             titleFont,
-            titleRectangle,
+            layout.TitleRectangle,
             secondaryTextColor,
             TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
 
-        DrawDigits(e.Graphics, digitText);
+        DrawDigits(e.Graphics, digitText, layout);
 
         var subtitleText = string.IsNullOrWhiteSpace(Subtitle) ? TargetDate.ToString("yyyy年M月d日") : Subtitle;
-        var subtitleRectangle = new Rectangle(0, Height - 29, Width, 20);
         TextRenderer.DrawText(
             e.Graphics,
             subtitleText,
             subtitleFont,
-            subtitleRectangle,
+            layout.SubtitleRectangle,
             secondaryTextColor,
             TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
     }
 
-    private void DrawDigits(Graphics graphics, string text)
+    internal static CountdownDigitLayout CalculateLayout(Size size, int digitCount)
     {
-        var digitCount = text.Length;
+        digitCount = Math.Clamp(digitCount, 1, 5);
+        var titleRectangle = new Rectangle(0, 8, size.Width, 19);
+        var subtitleRectangle = new Rectangle(0, Math.Max(0, size.Height - 26), size.Width, 18);
+        var topBand = titleRectangle.Bottom + 7F;
+        var bottomBand = subtitleRectangle.Top - 7F;
+        var availableHeight = Math.Max(58F, bottomBand - topBand);
         var unitGap = 7F;
-        var digitWidth = Math.Min(54F, Math.Max(30F, (Width - 126F - unitGap * digitCount) / Math.Max(2, digitCount + 1)));
+        var digitWidthByHeight = availableHeight / 1.72F;
+        var digitWidthByWidth = (size.Width - 126F - unitGap * digitCount) / Math.Max(2, digitCount + 1);
+        var digitWidth = Math.Min(56F, Math.Max(28F, Math.Min(digitWidthByHeight, digitWidthByWidth)));
         var digitHeight = digitWidth * 1.72F;
         var totalWidth = digitCount * digitWidth + Math.Max(0, digitCount - 1) * unitGap + 28F;
-        var startX = (Width - totalWidth) / 2F;
-        var startY = Math.Max(28F, (Height - digitHeight) / 2F - 1F);
+        var startX = (size.Width - totalWidth) / 2F;
+        var startY = topBand + Math.Max(0F, (availableHeight - digitHeight) / 2F);
+        var digitBounds = new RectangleF(startX, startY, totalWidth, digitHeight);
 
+        return new CountdownDigitLayout(
+            digitWidth,
+            digitHeight,
+            startX,
+            startY,
+            digitBounds,
+            titleRectangle,
+            subtitleRectangle);
+    }
+
+    private void DrawDigits(Graphics graphics, string text, CountdownDigitLayout layout)
+    {
+        var unitGap = 7F;
         for (var index = 0; index < text.Length; index++)
         {
             var digit = text[index] - '0';
-            DrawDigit(graphics, digit, startX + index * (digitWidth + unitGap), startY, digitWidth, digitHeight);
+            DrawDigit(
+                graphics,
+                digit,
+                layout.StartX + index * (layout.DigitWidth + unitGap),
+                layout.StartY,
+                layout.DigitWidth,
+                layout.DigitHeight);
         }
 
-        using var unitFont = new Font("Microsoft YaHei UI", Math.Max(11F, digitWidth * 0.36F), FontStyle.Regular);
+        using var unitFont = new Font("Microsoft YaHei UI", Math.Max(10.5F, layout.DigitWidth * 0.35F), FontStyle.Regular);
         var unitRectangle = new Rectangle(
-            (int)Math.Round(startX + digitCount * (digitWidth + unitGap) + 3),
-            (int)Math.Round(startY + digitHeight - 31),
+            (int)Math.Round(layout.StartX + text.Length * (layout.DigitWidth + unitGap) + 3),
+            (int)Math.Round(layout.StartY + layout.DigitHeight - 31),
             28,
             24);
         TextRenderer.DrawText(
@@ -127,6 +163,13 @@ internal sealed class DigitalCountdownControl : Control
 
     private void DrawSegment(Graphics graphics, PointF[] points, bool active)
     {
+        if (active)
+        {
+            using var shadowBrush = new SolidBrush(Color.FromArgb(48, textColor));
+            var shadowPoints = points.Select(point => new PointF(point.X, point.Y + 1.3F)).ToArray();
+            graphics.FillPolygon(shadowBrush, shadowPoints);
+        }
+
         using var brush = new SolidBrush(active ? textColor : inactiveSegmentColor);
         graphics.FillPolygon(brush, points);
     }

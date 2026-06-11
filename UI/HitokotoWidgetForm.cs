@@ -2,12 +2,12 @@ namespace DeskVerse;
 
 internal sealed class HitokotoWidgetForm : Form
 {
-    private const int WidgetMaxWidth = 760;
+    private const int WidgetMaxWidth = 780;
     private const int WidgetMinWidth = 380;
-    private const int WidgetMinHeight = 74;
+    private const int WidgetMinHeight = 70;
     private const int WidgetMaxHeight = 142;
     private const int TopOffset = 18;
-    private const int CornerRadius = 18;
+    private const int CornerRadius = 14;
     private const int AnimationFrameMs = 16;
     private const int StartupAnimationMs = 220;
     private const int RefreshFadeMs = 150;
@@ -88,11 +88,11 @@ internal sealed class HitokotoWidgetForm : Form
             ColumnCount = 1,
             RowCount = 2,
             Margin = Padding.Empty,
-            Padding = new Padding(26, 12, 26, 10),
+            Padding = new Padding(30, 10, 30, 9),
             BackColor = Color.Transparent
         };
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 21F));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
         layout.Controls.Add(sentenceLabel, 0, 0);
         layout.Controls.Add(metaLabel, 0, 1);
         quoteView = layout;
@@ -184,14 +184,28 @@ internal sealed class HitokotoWidgetForm : Form
 
         using var highlightBrush = new LinearGradientBrush(
             rectangle,
-            Color.FromArgb(38, Color.White),
-            Color.FromArgb(4, Color.White),
+            Color.FromArgb(34, Color.White),
+            Color.FromArgb(6, Color.White),
             LinearGradientMode.Vertical);
         e.Graphics.FillPath(highlightBrush, path);
 
-        using var topPen = new Pen(Color.FromArgb(58, Color.White), 1);
-        e.Graphics.DrawArc(topPen, rectangle.Left + 1, rectangle.Top + 1, CornerRadius, CornerRadius, 180, 70);
+        using var depthBrush = new LinearGradientBrush(
+            rectangle,
+            Color.FromArgb(0, Color.Black),
+            Color.FromArgb(18, Color.Black),
+            LinearGradientMode.Vertical);
+        e.Graphics.FillPath(depthBrush, path);
+
+        using var topPen = new Pen(Color.FromArgb(46, Color.White), 1);
+        e.Graphics.DrawArc(topPen, rectangle.Left + 1, rectangle.Top + 1, CornerRadius, CornerRadius, 180, 64);
         e.Graphics.DrawLine(topPen, rectangle.Left + CornerRadius / 2, rectangle.Top + 1, rectangle.Right - CornerRadius / 2, rectangle.Top + 1);
+
+        var innerRectangle = rectangle;
+        innerRectangle.Inflate(-1, -1);
+        using var innerPath = new GraphicsPath();
+        innerPath.AddRoundedRectangle(innerRectangle, new Size(Math.Max(4, CornerRadius - 3), Math.Max(4, CornerRadius - 3)));
+        using var innerPen = new Pen(Color.FromArgb(18, Color.White));
+        e.Graphics.DrawPath(innerPen, innerPath);
 
         using var pen = new Pen(borderColor);
         e.Graphics.DrawPath(pen, path);
@@ -443,6 +457,7 @@ internal sealed class HitokotoWidgetForm : Form
         displayTimer.Stop();
         if (settings.CountdownEnabled)
         {
+            ShowCountdownView();
             displayTimer.Start();
         }
         else
@@ -695,7 +710,6 @@ internal sealed class HitokotoWidgetForm : Form
         AppSettings.Save(settings);
         ApplyCountdownSettings();
         ApplyDisplayTimerSetting();
-        ResizeToFitSentence();
     }
 
     private void ApplyCountdownSettings()
@@ -810,7 +824,7 @@ internal sealed class HitokotoWidgetForm : Form
         var maxWidth = Math.Min(WidgetMaxWidth, Math.Max(WidgetMinWidth, workArea.Width - 96));
         if (countdownControl.Visible)
         {
-            Width = Math.Clamp(520, WidgetMinWidth, maxWidth);
+            Width = Math.Clamp(560, WidgetMinWidth, maxWidth);
             Height = WidgetMaxHeight;
             PositionWithinWorkArea(workArea);
             UpdateRoundedRegion();

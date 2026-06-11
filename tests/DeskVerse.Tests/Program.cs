@@ -8,7 +8,9 @@ var tests = new (string Name, Action Run)[]
     ("Wallpaper theme keeps text distinct from background", WallpaperThemeKeepsTextDistinctFromBackground),
     ("Animation easing stays in expected bounds", AnimationEasingStaysInExpectedBounds),
     ("Countdown remaining days clamps past targets", CountdownRemainingDaysClampsPastTargets),
-    ("Digital countdown control supports construction", DigitalCountdownControlSupportsConstruction)
+    ("Digital countdown control supports construction", DigitalCountdownControlSupportsConstruction),
+    ("Digital countdown layout keeps subtitle separate", DigitalCountdownLayoutKeepsSubtitleSeparate),
+    ("Countdown settings form keeps inputs readable", CountdownSettingsFormKeepsInputsReadable)
 };
 
 var failures = new List<string>();
@@ -89,6 +91,46 @@ static void DigitalCountdownControlSupportsConstruction()
     using var control = new DigitalCountdownControl();
 
     AssertEqual(Color.Transparent, control.BackColor);
+}
+
+static void DigitalCountdownLayoutKeepsSubtitleSeparate()
+{
+    var layout = DigitalCountdownControl.CalculateLayout(new Size(520, 142), 5);
+
+    AssertTrue(layout.DigitBounds.Bottom <= layout.SubtitleRectangle.Top - 1, "countdown digits overlap subtitle");
+    AssertTrue(layout.DigitWidth is >= 28F and <= 56F, "digit width is outside the supported range");
+}
+
+static void CountdownSettingsFormKeepsInputsReadable()
+{
+    using var form = new CountdownSettingsForm(new AppSettings(
+        CountdownEnabled: true,
+        CountdownTitle: "重要目标日",
+        CountdownTargetDate: new DateTime(2026, 7, 9),
+        CountdownSubtitle: "把重要的日子放在桌面上"));
+
+    form.CreateControl();
+    form.PerformLayout();
+
+    var inputWidths = EnumerateControls(form)
+        .Where(control => control is TextBox or DateTimePicker)
+        .Select(control => control.Width)
+        .ToArray();
+
+    AssertEqual(3, inputWidths.Length);
+    AssertTrue(inputWidths.Min() >= 240, $"input width is too narrow: {string.Join(", ", inputWidths)}");
+}
+
+static IEnumerable<Control> EnumerateControls(Control root)
+{
+    foreach (Control child in root.Controls)
+    {
+        yield return child;
+        foreach (var descendant in EnumerateControls(child))
+        {
+            yield return descendant;
+        }
+    }
 }
 
 static double Contrast(Color first, Color second)
