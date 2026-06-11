@@ -26,21 +26,27 @@ internal sealed record LiquidGlassMaterial(
         var t = normalized / 100.0;
         var isDark = RelativeLuminance(theme.Background) < 0.5;
 
-        var glassTint = isDark
-            ? Blend(theme.Background, Color.FromArgb(76, 84, 99), 0.32 + t * 0.2)
-            : Blend(theme.Background, Color.FromArgb(250, 253, 255), 0.26 + t * 0.28);
-        var surface = Blend(theme.Background, glassTint, 0.44 + t * 0.38);
-        var surfaceTop = Blend(surface, Color.White, isDark ? 0.1 + t * 0.14 : 0.16 + t * 0.18);
-        var surfaceBottom = Blend(surface, Color.Black, isDark ? 0.12 + t * 0.1 : 0.05 + t * 0.06);
-        var specular = Color.FromArgb((int)Math.Round(24 + 92 * t), Color.White);
-        var edgeLight = Color.FromArgb((int)Math.Round(44 + 108 * t), Color.White);
-        var edgeShade = Color.FromArgb((int)Math.Round(22 + 58 * t), Color.Black);
+        var neutralGlass = isDark
+            ? Color.FromArgb(86, 91, 101)
+            : Color.FromArgb(245, 248, 252);
+        var surface = Blend(theme.Background, neutralGlass, isDark ? 0.52 + t * 0.12 : 0.62 + t * 0.1);
+        var surfaceTop = Blend(surface, Color.White, isDark ? 0.13 + t * 0.08 : 0.1 + t * 0.06);
+        var surfaceBottom = Blend(surface, Color.Black, isDark ? 0.035 + t * 0.025 : 0.018 + t * 0.012);
+        var specular = Color.FromArgb((int)Math.Round(14 + 32 * t), Color.White);
+        var edgeLight = Color.FromArgb((int)Math.Round(34 + 62 * t), Color.White);
+        var edgeShade = Color.FromArgb((int)Math.Round(8 + 18 * t), Color.Black);
         var border = isDark
-            ? Color.FromArgb((int)Math.Round(54 + 92 * t), Color.White)
-            : Color.FromArgb((int)Math.Round(48 + 58 * t), Color.FromArgb(32, 37, 47));
-        var innerBorder = Color.FromArgb((int)Math.Round(14 + 48 * t), Color.White);
-        var opacity = 0.94 - t * 0.08;
-        var radius = (int)Math.Round(14 + t * 10);
+            ? Color.FromArgb((int)Math.Round(40 + 46 * t), Color.White)
+            : Color.FromArgb((int)Math.Round(24 + 22 * t), Color.FromArgb(32, 37, 47));
+        var innerBorder = Color.FromArgb((int)Math.Round(10 + 24 * t), Color.White);
+        var text = isDark
+            ? Color.FromArgb(248, 249, 247)
+            : Color.FromArgb(22, 25, 30);
+        var secondary = isDark
+            ? Color.FromArgb(216, 220, 218)
+            : Color.FromArgb(78, 84, 92);
+        var opacity = 0.985 - t * 0.045;
+        var radius = (int)Math.Round(22 + t * 8);
 
         return new LiquidGlassMaterial(
             normalized,
@@ -52,8 +58,8 @@ internal sealed record LiquidGlassMaterial(
             edgeShade,
             border,
             innerBorder,
-            theme.Text,
-            theme.SecondaryText,
+            text,
+            secondary,
             opacity,
             radius);
     }

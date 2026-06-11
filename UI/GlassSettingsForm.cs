@@ -20,8 +20,8 @@ internal sealed class GlassSettingsForm : Form
         MinimizeBox = false;
         ShowInTaskbar = false;
         StartPosition = FormStartPosition.CenterParent;
-        ClientSize = new Size(440, 330);
-        MinimumSize = new Size(440, 330);
+        ClientSize = new Size(420, 300);
+        MinimumSize = new Size(420, 300);
         Font = new Font("Microsoft YaHei UI", 9.2F);
         BackColor = DialogBackground;
         ForeColor = PrimaryText;
@@ -47,6 +47,7 @@ internal sealed class GlassSettingsForm : Form
             Minimum = 0,
             Maximum = 100,
             TickFrequency = 10,
+            TickStyle = TickStyle.None,
             SmallChange = 1,
             LargeChange = 10,
             Value = LiquidGlassMaterial.NormalizeIntensity(glassIntensity),
@@ -71,19 +72,19 @@ internal sealed class GlassSettingsForm : Form
             Padding = new Padding(22, 20, 22, 18),
             BackColor = DialogBackground
         };
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 34F));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 32F));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 28F));
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 42F));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 38F));
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 44F));
 
         layout.Controls.Add(new Label
         {
-            Text = "Liquid Glass 强度",
+            Text = "玻璃外观",
             Dock = DockStyle.Fill,
             TextAlign = ContentAlignment.MiddleLeft,
             ForeColor = PrimaryText,
-            Font = new Font("Microsoft YaHei UI", 13.2F, FontStyle.Bold)
+            Font = new Font("Microsoft YaHei UI", 12.4F, FontStyle.Bold)
         }, 0, 0);
         layout.Controls.Add(previewPanel, 0, 1);
         layout.Controls.Add(BuildScaleLabels(), 0, 2);
@@ -112,7 +113,7 @@ internal sealed class GlassSettingsForm : Form
         }, 0, 0);
         panel.Controls.Add(new Label
         {
-            Text = "Liquid Glass",
+            Text = "清透",
             Dock = DockStyle.Fill,
             TextAlign = ContentAlignment.MiddleRight,
             ForeColor = SecondaryText
@@ -203,30 +204,18 @@ internal sealed class GlassSettingsForm : Form
             background.Inflate(-1, -1);
             using var backdrop = new LinearGradientBrush(
                 background,
-                LiquidGlassMaterial.Blend(Material.Surface, Color.White, 0.22),
-                LiquidGlassMaterial.Blend(Material.Surface, Color.Black, 0.24),
+                Color.FromArgb(41, 48, 58),
+                Color.FromArgb(169, 190, 202),
                 LinearGradientMode.ForwardDiagonal);
             e.Graphics.FillRoundedRectangle(backdrop, background, new Size(18, 18));
 
-            using var wavePen = new Pen(Color.FromArgb(32, Color.White), 1.1F);
-            for (var index = 0; index < 4; index++)
-            {
-                var y = background.Top + 24 + index * 28;
-                e.Graphics.DrawBezier(
-                    wavePen,
-                    background.Left + 18,
-                    y,
-                    background.Left + background.Width * 0.35F,
-                    y - 18,
-                    background.Left + background.Width * 0.6F,
-                    y + 14,
-                    background.Right - 18,
-                    y - 4);
-            }
+            using var glowBrush = new SolidBrush(Color.FromArgb(46, 255, 246, 225));
+            e.Graphics.FillEllipse(glowBrush, background.Left - 24, background.Bottom - 70, 190, 116);
 
-            var card = new Rectangle(background.Left + 44, background.Top + 36, background.Width - 88, 92);
+            var card = new Rectangle(background.Left + 36, background.Top + 52, background.Width - 72, 64);
             using var path = new GraphicsPath();
-            path.AddRoundedRectangle(card, new Size(Material.Radius, Material.Radius));
+            var radius = Math.Min(30, (card.Height - 2) / 2);
+            path.AddRoundedRectangle(card, new Size(radius, radius));
             using var surface = new LinearGradientBrush(card, Material.SurfaceTop, Material.SurfaceBottom, LinearGradientMode.Vertical);
             e.Graphics.FillPath(surface, path);
             using var shine = new LinearGradientBrush(card, Material.Specular, Color.FromArgb(6, Color.White), LinearGradientMode.Vertical);
@@ -237,23 +226,23 @@ internal sealed class GlassSettingsForm : Form
             var innerCard = card;
             innerCard.Inflate(-1, -1);
             using var innerPath = new GraphicsPath();
-            innerPath.AddRoundedRectangle(innerCard, new Size(Math.Max(5, Material.Radius - 4), Math.Max(5, Material.Radius - 4)));
+            innerPath.AddRoundedRectangle(innerCard, new Size(Math.Max(10, radius - 4), Math.Max(10, radius - 4)));
             e.Graphics.DrawPath(inner, innerPath);
 
-            using var titleFont = new Font("Microsoft YaHei UI", 12.5F, FontStyle.Regular);
-            using var metaFont = new Font("Microsoft YaHei UI", 8.2F, FontStyle.Regular);
+            using var titleFont = new Font("Microsoft YaHei UI", 11.8F, FontStyle.Regular);
+            using var metaFont = new Font("Microsoft YaHei UI", 7.6F, FontStyle.Regular);
             TextRenderer.DrawText(
                 e.Graphics,
                 "身处井隅，心向璀璨。",
                 titleFont,
-                new Rectangle(card.Left + 16, card.Top + 22, card.Width - 32, 28),
+                new Rectangle(card.Left + 18, card.Top + 13, card.Width - 36, 24),
                 Material.Text,
                 TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
             TextRenderer.DrawText(
                 e.Graphics,
                 "DeskVerse",
                 metaFont,
-                new Rectangle(card.Left + 16, card.Top + 56, card.Width - 32, 22),
+                new Rectangle(card.Left + 18, card.Top + 39, card.Width - 36, 18),
                 Material.SecondaryText,
                 TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
         }

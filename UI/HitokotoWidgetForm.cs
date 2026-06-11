@@ -2,11 +2,11 @@ namespace DeskVerse;
 
 internal sealed class HitokotoWidgetForm : Form
 {
-    private const int WidgetMaxWidth = 780;
-    private const int WidgetMinWidth = 380;
-    private const int WidgetMinHeight = 70;
-    private const int WidgetMaxHeight = 142;
-    private const int TopOffset = 18;
+    private const int WidgetMaxWidth = 720;
+    private const int WidgetMinWidth = 360;
+    private const int WidgetMinHeight = 56;
+    private const int WidgetMaxHeight = 116;
+    private const int TopOffset = 20;
     private const int AnimationFrameMs = 16;
     private const int StartupAnimationMs = 220;
     private const int RefreshFadeMs = 150;
@@ -90,11 +90,11 @@ internal sealed class HitokotoWidgetForm : Form
             ColumnCount = 1,
             RowCount = 2,
             Margin = Padding.Empty,
-            Padding = new Padding(30, 10, 30, 9),
+            Padding = new Padding(28, 8, 28, 6),
             BackColor = Color.Transparent
         };
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 17F));
         layout.Controls.Add(sentenceLabel, 0, 0);
         layout.Controls.Add(metaLabel, 0, 1);
         quoteView = layout;
@@ -179,7 +179,8 @@ internal sealed class HitokotoWidgetForm : Form
         rectangle.Inflate(-1, -1);
 
         using var path = new GraphicsPath();
-        path.AddRoundedRectangle(rectangle, new Size(glassMaterial.Radius, glassMaterial.Radius));
+        var radius = CurrentCornerRadius();
+        path.AddRoundedRectangle(rectangle, new Size(radius, radius));
 
         using var baseBrush = new LinearGradientBrush(
             rectangle,
@@ -200,7 +201,7 @@ internal sealed class HitokotoWidgetForm : Form
         var innerRectangle = rectangle;
         innerRectangle.Inflate(-1, -1);
         using var innerPath = new GraphicsPath();
-        var innerRadius = Math.Max(5, glassMaterial.Radius - 4);
+        var innerRadius = Math.Max(10, radius - 4);
         innerPath.AddRoundedRectangle(innerRectangle, new Size(innerRadius, innerRadius));
         using var innerPen = new Pen(glassMaterial.InnerBorder);
         e.Graphics.DrawPath(innerPen, innerPath);
@@ -619,9 +620,9 @@ internal sealed class HitokotoWidgetForm : Form
     {
         var size = mode switch
         {
-            FontSizeMode.Small => 12.8F,
-            FontSizeMode.Large => 15.8F,
-            _ => 14.2F
+            FontSizeMode.Small => 11.6F,
+            FontSizeMode.Large => 13.8F,
+            _ => 12.6F
         };
         return new Font("Microsoft YaHei UI", size, FontStyle.Regular);
     }
@@ -630,9 +631,9 @@ internal sealed class HitokotoWidgetForm : Form
     {
         var size = mode switch
         {
-            FontSizeMode.Small => 7.8F,
-            FontSizeMode.Large => 8.8F,
-            _ => 8.2F
+            FontSizeMode.Small => 7.2F,
+            FontSizeMode.Large => 8.0F,
+            _ => 7.6F
         };
         return new Font("Microsoft YaHei UI", size, FontStyle.Regular);
     }
@@ -838,8 +839,8 @@ internal sealed class HitokotoWidgetForm : Form
         var maxWidth = Math.Min(WidgetMaxWidth, Math.Max(WidgetMinWidth, workArea.Width - 96));
         if (countdownControl.Visible)
         {
-            Width = Math.Clamp(560, WidgetMinWidth, maxWidth);
-            Height = WidgetMaxHeight;
+            Width = Math.Clamp(520, WidgetMinWidth, maxWidth);
+            Height = 126;
             PositionWithinWorkArea(workArea);
             UpdateRoundedRegion();
             return;
@@ -855,16 +856,16 @@ internal sealed class HitokotoWidgetForm : Form
             metaLabel.Font,
             new Size(int.MaxValue, 24),
             TextFormatFlags.SingleLine | TextFormatFlags.NoPadding).Width;
-        var desiredWidth = Math.Max(sentenceWidth + 104, metaWidth + 88);
+        var desiredWidth = Math.Max(sentenceWidth + 92, metaWidth + 76);
         Width = Math.Clamp(desiredWidth, WidgetMinWidth, maxWidth);
 
-        var textWidth = Math.Max(120, ClientSize.Width - 76);
+        var textWidth = Math.Max(120, ClientSize.Width - 72);
         var measured = TextRenderer.MeasureText(
             sentenceLabel.Text,
             sentenceLabel.Font,
             new Size(textWidth, 0),
             TextFormatFlags.WordBreak | TextFormatFlags.TextBoxControl);
-        var desiredHeight = measured.Height + 50;
+        var desiredHeight = measured.Height + 39;
         Height = Math.Clamp(desiredHeight, WidgetMinHeight, WidgetMaxHeight);
         PositionWithinWorkArea(workArea);
         UpdateRoundedRegion();
@@ -884,53 +885,37 @@ internal sealed class HitokotoWidgetForm : Form
     private void UpdateRoundedRegion()
     {
         using var path = new GraphicsPath();
-        path.AddRoundedRectangle(ClientRectangle, new Size(glassMaterial.Radius, glassMaterial.Radius));
+        var radius = CurrentCornerRadius();
+        path.AddRoundedRectangle(ClientRectangle, new Size(radius, radius));
         Region = new Region(path);
         Invalidate();
+    }
+
+    private int CurrentCornerRadius()
+    {
+        return Math.Clamp((Height - 2) / 2, 18, glassMaterial.Radius);
     }
 
     private void DrawLiquidHighlights(Graphics graphics, Rectangle rectangle, GraphicsPath clipPath)
     {
         var intensity = glassMaterial.Intensity / 100F;
-        if (intensity <= 0.01F)
-        {
-            using var shadeBrush = new LinearGradientBrush(
-                rectangle,
-                Color.FromArgb(0, Color.Black),
-                glassMaterial.EdgeShade,
-                LinearGradientMode.Vertical);
-            graphics.FillPath(shadeBrush, clipPath);
-            return;
-        }
-
         var state = graphics.Save();
         graphics.SetClip(clipPath);
 
-        using var edgePen = new Pen(glassMaterial.EdgeLight, 1.2F + intensity * 0.8F);
-        graphics.DrawArc(edgePen, rectangle.Left + 2, rectangle.Top + 2, glassMaterial.Radius + 10, glassMaterial.Radius + 10, 182, 70);
-        graphics.DrawLine(edgePen, rectangle.Left + glassMaterial.Radius, rectangle.Top + 2, rectangle.Right - glassMaterial.Radius, rectangle.Top + 2);
+        using var topPen = new Pen(glassMaterial.EdgeLight, 1F);
+        graphics.DrawLine(
+            topPen,
+            rectangle.Left + CurrentCornerRadius() / 2,
+            rectangle.Top + 1,
+            rectangle.Right - CurrentCornerRadius() / 2,
+            rectangle.Top + 1);
 
-        using var causticPen = new Pen(Color.FromArgb((int)Math.Round(18 + 56 * intensity), Color.White), 1.1F);
-        causticPen.StartCap = LineCap.Round;
-        causticPen.EndCap = LineCap.Round;
-        var y = rectangle.Top + Math.Max(18, rectangle.Height * 0.32F);
-        graphics.DrawBezier(
-            causticPen,
-            rectangle.Left + rectangle.Width * 0.16F,
-            y,
-            rectangle.Left + rectangle.Width * 0.34F,
-            y - 13F * intensity,
-            rectangle.Left + rectangle.Width * 0.52F,
-            y + 10F * intensity,
-            rectangle.Left + rectangle.Width * 0.73F,
-            y - 4F * intensity);
-
-        using var sideBrush = new LinearGradientBrush(
+        using var lensBrush = new LinearGradientBrush(
             rectangle,
-            Color.FromArgb((int)Math.Round(10 + 34 * intensity), Color.White),
-            Color.FromArgb((int)Math.Round(6 + 24 * intensity), Color.Black),
-            LinearGradientMode.ForwardDiagonal);
-        graphics.FillPath(sideBrush, clipPath);
+            Color.FromArgb((int)Math.Round(10 + 22 * intensity), Color.White),
+            Color.FromArgb(0, Color.White),
+            LinearGradientMode.Horizontal);
+        graphics.FillPath(lensBrush, clipPath);
 
         using var bottomBrush = new LinearGradientBrush(
             rectangle,
