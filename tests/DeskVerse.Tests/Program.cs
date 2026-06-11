@@ -10,7 +10,9 @@ var tests = new (string Name, Action Run)[]
     ("Countdown remaining days clamps past targets", CountdownRemainingDaysClampsPastTargets),
     ("Digital countdown control supports construction", DigitalCountdownControlSupportsConstruction),
     ("Digital countdown layout keeps subtitle separate", DigitalCountdownLayoutKeepsSubtitleSeparate),
-    ("Countdown settings form keeps inputs readable", CountdownSettingsFormKeepsInputsReadable)
+    ("Countdown settings form keeps inputs readable", CountdownSettingsFormKeepsInputsReadable),
+    ("Liquid glass intensity is normalized", LiquidGlassIntensityIsNormalized),
+    ("Liquid glass material scales opacity", LiquidGlassMaterialScalesOpacity)
 };
 
 var failures = new List<string>();
@@ -119,6 +121,26 @@ static void CountdownSettingsFormKeepsInputsReadable()
 
     AssertEqual(3, inputWidths.Length);
     AssertTrue(inputWidths.Min() >= 240, $"input width is too narrow: {string.Join(", ", inputWidths)}");
+}
+
+static void LiquidGlassIntensityIsNormalized()
+{
+    AssertEqual(0, LiquidGlassMaterial.NormalizeIntensity(-12));
+    AssertEqual(42, LiquidGlassMaterial.NormalizeIntensity(42));
+    AssertEqual(100, LiquidGlassMaterial.NormalizeIntensity(148));
+
+    var settings = new AppSettings(GlassIntensity: 148).Normalize();
+    AssertEqual(100, settings.GlassIntensity);
+}
+
+static void LiquidGlassMaterialScalesOpacity()
+{
+    var theme = DesktopTheme.FromWallpaperColor(Color.FromArgb(38, 43, 52));
+    var frosted = LiquidGlassMaterial.FromTheme(theme, 0);
+    var liquid = LiquidGlassMaterial.FromTheme(theme, 100);
+
+    AssertTrue(frosted.WindowOpacity > liquid.WindowOpacity, "liquid glass should be more transparent than frosted glass");
+    AssertTrue(Contrast(liquid.Surface, liquid.Text) > 3.0, "liquid glass text contrast is too low");
 }
 
 static IEnumerable<Control> EnumerateControls(Control root)

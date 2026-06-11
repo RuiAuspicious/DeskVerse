@@ -7,7 +7,6 @@ internal sealed class HitokotoWidgetForm : Form
     private const int WidgetMinHeight = 70;
     private const int WidgetMaxHeight = 142;
     private const int TopOffset = 18;
-    private const int CornerRadius = 14;
     private const int AnimationFrameMs = 16;
     private const int StartupAnimationMs = 220;
     private const int RefreshFadeMs = 150;
@@ -32,6 +31,9 @@ internal sealed class HitokotoWidgetForm : Form
     private Color borderColor = Color.FromArgb(130, 255, 255, 255);
     private Color baseBorderColor = Color.FromArgb(130, 255, 255, 255);
     private double themeOpacity = 0.86;
+    private LiquidGlassMaterial glassMaterial = LiquidGlassMaterial.FromTheme(
+        DesktopTheme.FromWallpaperColor(Color.FromArgb(38, 43, 52)),
+        68);
     private bool isRefreshing;
     private int feedbackVersion;
     private CancellationTokenSource? windowAnimationCancellation;
@@ -177,34 +179,30 @@ internal sealed class HitokotoWidgetForm : Form
         rectangle.Inflate(-1, -1);
 
         using var path = new GraphicsPath();
-        path.AddRoundedRectangle(rectangle, new Size(CornerRadius, CornerRadius));
+        path.AddRoundedRectangle(rectangle, new Size(glassMaterial.Radius, glassMaterial.Radius));
 
-        using var baseBrush = new SolidBrush(BackColor);
+        using var baseBrush = new LinearGradientBrush(
+            rectangle,
+            glassMaterial.SurfaceTop,
+            glassMaterial.SurfaceBottom,
+            LinearGradientMode.Vertical);
         e.Graphics.FillPath(baseBrush, path);
 
         using var highlightBrush = new LinearGradientBrush(
             rectangle,
-            Color.FromArgb(34, Color.White),
-            Color.FromArgb(6, Color.White),
+            glassMaterial.Specular,
+            Color.FromArgb(4, Color.White),
             LinearGradientMode.Vertical);
         e.Graphics.FillPath(highlightBrush, path);
 
-        using var depthBrush = new LinearGradientBrush(
-            rectangle,
-            Color.FromArgb(0, Color.Black),
-            Color.FromArgb(18, Color.Black),
-            LinearGradientMode.Vertical);
-        e.Graphics.FillPath(depthBrush, path);
-
-        using var topPen = new Pen(Color.FromArgb(46, Color.White), 1);
-        e.Graphics.DrawArc(topPen, rectangle.Left + 1, rectangle.Top + 1, CornerRadius, CornerRadius, 180, 64);
-        e.Graphics.DrawLine(topPen, rectangle.Left + CornerRadius / 2, rectangle.Top + 1, rectangle.Right - CornerRadius / 2, rectangle.Top + 1);
+        DrawLiquidHighlights(e.Graphics, rectangle, path);
 
         var innerRectangle = rectangle;
         innerRectangle.Inflate(-1, -1);
         using var innerPath = new GraphicsPath();
-        innerPath.AddRoundedRectangle(innerRectangle, new Size(Math.Max(4, CornerRadius - 3), Math.Max(4, CornerRadius - 3)));
-        using var innerPen = new Pen(Color.FromArgb(18, Color.White));
+        var innerRadius = Math.Max(5, glassMaterial.Radius - 4);
+        innerPath.AddRoundedRectangle(innerRectangle, new Size(innerRadius, innerRadius));
+        using var innerPen = new Pen(glassMaterial.InnerBorder);
         e.Graphics.DrawPath(innerPen, innerPath);
 
         using var pen = new Pen(borderColor);
@@ -304,6 +302,8 @@ internal sealed class HitokotoWidgetForm : Form
         settingsMenu.DropDownItems.Add(refreshMenu);
         settingsMenu.DropDownItems.Add(positionMenu);
         settingsMenu.DropDownItems.Add(fontMenu);
+        settingsMenu.DropDownItems.Add(new ToolStripSeparator());
+        settingsMenu.DropDownItems.Add("Liquid Glass 强度...", null, (_, _) => ConfigureGlass());
         return settingsMenu;
     }
 
@@ -438,6 +438,19 @@ internal sealed class HitokotoWidgetForm : Form
         metaLabel.Font = BuildMetaFont(mode);
         ResizeToFitSentence();
         UpdateFontSizeMenuChecks();
+    }
+
+    private void ConfigureGlass()
+    {
+        using var dialog = new GlassSettingsForm(settings.GlassIntensity, glassMaterial);
+        if (dialog.ShowDialog(this) != DialogResult.OK)
+        {
+            return;
+        }
+
+        settings = settings with { GlassIntensity = dialog.GlassIntensity };
+        AppSettings.Save(settings);
+        ApplyWallpaperTheme();
     }
 
     private void ApplyRefreshTimerSetting()
@@ -638,15 +651,16 @@ internal sealed class HitokotoWidgetForm : Form
     {
         var wallpaperColor = WallpaperThemeReader.TryReadTopCenterColor() ?? Color.FromArgb(38, 43, 52);
         var theme = DesktopTheme.FromWallpaperColor(wallpaperColor);
+        glassMaterial = LiquidGlassMaterial.FromTheme(theme, settings.GlassIntensity);
 
-        BackColor = theme.Background;
-        ForeColor = theme.Text;
-        sentenceLabel.ForeColor = theme.Text;
-        metaLabel.ForeColor = theme.SecondaryText;
+        BackColor = glassMaterial.Surface;
+        ForeColor = glassMaterial.Text;
+        sentenceLabel.ForeColor = glassMaterial.Text;
+        metaLabel.ForeColor = glassMaterial.SecondaryText;
         countdownControl.ApplyTheme(theme);
-        baseBorderColor = theme.Border;
+        baseBorderColor = glassMaterial.Border;
         borderColor = baseBorderColor;
-        themeOpacity = theme.Opacity;
+        themeOpacity = glassMaterial.WindowOpacity;
         if (!isRefreshing && Visible)
         {
             Opacity = themeOpacity;
@@ -870,9 +884,62 @@ internal sealed class HitokotoWidgetForm : Form
     private void UpdateRoundedRegion()
     {
         using var path = new GraphicsPath();
-        path.AddRoundedRectangle(ClientRectangle, new Size(CornerRadius, CornerRadius));
+        path.AddRoundedRectangle(ClientRectangle, new Size(glassMaterial.Radius, glassMaterial.Radius));
         Region = new Region(path);
         Invalidate();
+    }
+
+    private void DrawLiquidHighlights(Graphics graphics, Rectangle rectangle, GraphicsPath clipPath)
+    {
+        var intensity = glassMaterial.Intensity / 100F;
+        if (intensity <= 0.01F)
+        {
+            using var shadeBrush = new LinearGradientBrush(
+                rectangle,
+                Color.FromArgb(0, Color.Black),
+                glassMaterial.EdgeShade,
+                LinearGradientMode.Vertical);
+            graphics.FillPath(shadeBrush, clipPath);
+            return;
+        }
+
+        var state = graphics.Save();
+        graphics.SetClip(clipPath);
+
+        using var edgePen = new Pen(glassMaterial.EdgeLight, 1.2F + intensity * 0.8F);
+        graphics.DrawArc(edgePen, rectangle.Left + 2, rectangle.Top + 2, glassMaterial.Radius + 10, glassMaterial.Radius + 10, 182, 70);
+        graphics.DrawLine(edgePen, rectangle.Left + glassMaterial.Radius, rectangle.Top + 2, rectangle.Right - glassMaterial.Radius, rectangle.Top + 2);
+
+        using var causticPen = new Pen(Color.FromArgb((int)Math.Round(18 + 56 * intensity), Color.White), 1.1F);
+        causticPen.StartCap = LineCap.Round;
+        causticPen.EndCap = LineCap.Round;
+        var y = rectangle.Top + Math.Max(18, rectangle.Height * 0.32F);
+        graphics.DrawBezier(
+            causticPen,
+            rectangle.Left + rectangle.Width * 0.16F,
+            y,
+            rectangle.Left + rectangle.Width * 0.34F,
+            y - 13F * intensity,
+            rectangle.Left + rectangle.Width * 0.52F,
+            y + 10F * intensity,
+            rectangle.Left + rectangle.Width * 0.73F,
+            y - 4F * intensity);
+
+        using var sideBrush = new LinearGradientBrush(
+            rectangle,
+            Color.FromArgb((int)Math.Round(10 + 34 * intensity), Color.White),
+            Color.FromArgb((int)Math.Round(6 + 24 * intensity), Color.Black),
+            LinearGradientMode.ForwardDiagonal);
+        graphics.FillPath(sideBrush, clipPath);
+
+        using var bottomBrush = new LinearGradientBrush(
+            rectangle,
+            Color.FromArgb(0, Color.Black),
+            glassMaterial.EdgeShade,
+            LinearGradientMode.Vertical);
+        graphics.FillPath(bottomBrush, clipPath);
+
+        graphics.Restore(state);
     }
 
     private void HandleDisplaySettingsChanged(object? sender, EventArgs e)

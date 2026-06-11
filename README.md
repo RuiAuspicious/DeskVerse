@@ -22,6 +22,7 @@ It stays on your desktop, shows a short sentence or poem, adapts its colors from
   - [Hitokoto](https://developer.hitokoto.cn/sentence/)
   - [Jinrishici](https://www.jinrishici.com/doc/)
 - Wallpaper-aware theme colors for background, text, metadata, and border.
+- Liquid Glass visual style with a continuous frosted-to-glass intensity slider.
 - Optional digital countdown screen that alternates with the sentence view every 5 seconds.
 - Auto refresh interval: 15 minutes, 30 minutes, 1 hour, daily, or locked.
 - Position presets: top center, top left, top right, bottom center.
@@ -87,7 +88,7 @@ dotnet publish -c Release -r win-x64 --self-contained true /p:PublishSingleFile=
 
 - Double-click the widget to refresh.
 - Right-click the widget or tray icon to open the menu.
-- Use `Settings` to change refresh interval, position, and font size.
+- Use `Settings` to change refresh interval, position, font size, and Liquid Glass intensity.
 - Use `Copy current sentence` or `Favorite current sentence` to keep a line you like.
 - Use `Startup on login` to enable or disable auto start.
 

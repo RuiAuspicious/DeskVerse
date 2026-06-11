@@ -9,7 +9,8 @@ internal sealed record AppSettings(
     bool CountdownEnabled = false,
     string CountdownTitle = "目标日",
     DateTime CountdownTargetDate = default,
-    string CountdownSubtitle = "把重要的日子放在桌面上")
+    string CountdownSubtitle = "把重要的日子放在桌面上",
+    int GlassIntensity = 68)
 {
     public DateTime EffectiveCountdownTargetDate()
     {
@@ -24,7 +25,8 @@ internal sealed record AppSettings(
         {
             CountdownTitle = string.IsNullOrWhiteSpace(CountdownTitle) ? "目标日" : CountdownTitle.Trim(),
             CountdownSubtitle = string.IsNullOrWhiteSpace(CountdownSubtitle) ? "把重要的日子放在桌面上" : CountdownSubtitle.Trim(),
-            CountdownTargetDate = EffectiveCountdownTargetDate()
+            CountdownTargetDate = EffectiveCountdownTargetDate(),
+            GlassIntensity = LiquidGlassMaterial.NormalizeIntensity(GlassIntensity)
         };
     }
 

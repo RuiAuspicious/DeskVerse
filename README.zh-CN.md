@@ -24,6 +24,7 @@
   - [一言](https://developer.hitokoto.cn/sentence/)
   - [今日诗词](https://www.jinrishici.com/doc/)
 - 根据壁纸自动匹配背景、正文、来源文字和边框颜色。
+- Liquid Glass 视觉：可在磨砂卡片和高透明玻璃之间无级调节。
 - 可选电子屏倒计时，每 5 秒与诗句视图自动切换。
 - 自动刷新间隔：15 分钟、30 分钟、1 小时、每天一次，或锁定当前句子。
 - 位置预设：顶部居中、左上角、右上角、底部居中。
@@ -89,7 +90,7 @@ dotnet publish -c Release -r win-x64 --self-contained true /p:PublishSingleFile=
 
 - 双击小组件刷新。
 - 右键小组件或托盘图标打开菜单。
-- 在 `设置` 中调整刷新间隔、位置和字号。
+- 在 `设置` 中调整刷新间隔、位置、字号和 Liquid Glass 强度。
 - 使用 `复制当前句子` 或 `收藏当前句子` 保存喜欢的内容。
 - 使用 `开机自启动` 开启或关闭随系统启动。
 
